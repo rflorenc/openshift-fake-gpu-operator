@@ -6,13 +6,12 @@ Simulates NVIDIA GPU resources on CPU only OpenShift nodes, enabling development
 
 ## Features
 
+- Declarative CRD driven configuration via `FakeGPUConfig` CR
 - Simulates full GPUs and MIG partitions on any worker node
 - Supports 7 GPU profiles: A100, H100, H200, B200, GB200, L40S, T4
 - Registers `nvidia.com/gpu` and MIG slice resources with kubelet
-- Exports Prometheus-compatible DCGM metrics
-- Declarative CRD-driven configuration via `FakeGPUConfig`
+- Exports prometheus DCGM metrics
 - Automatic node labeling and topology management
-- Detects and prevents conflicts with Helm-installed fake-gpu-operator
 
 ## Use Cases
 
@@ -74,6 +73,9 @@ worker-0   8
 worker-1   8
 worker-2   8
 ```
+
+More sample CRs available at `config/samples`.  
+
 
 ## No Manual Node Labeling Required
 
