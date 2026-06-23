@@ -1,0 +1,29 @@
+# This rule is not used by the project openshift-fake-gpu-operator itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to gpu.openshift.io resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: openshift-fake-gpu-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: fakegpuconfig-viewer-role
+rules:
+- apiGroups:
+  - gpu.openshift.io
+  resources:
+  - fakegpuconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - gpu.openshift.io
+  resources:
+  - fakegpuconfigs/status
+  verbs:
+  - get

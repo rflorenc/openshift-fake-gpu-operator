@@ -1,0 +1,329 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "gpu.openshift.io/v1alpha1",
+          "kind": "FakeGPUConfig",
+          "metadata": {
+            "name": "training-pool"
+          },
+          "spec": {
+            "gpuCount": 8,
+            "gpuProfile": "h200",
+            "nodeSelector": {
+              "node-role.kubernetes.io/worker": ""
+            }
+          }
+        }
+      ]
+    capabilities: Basic Install
+    categories: AI/Machine Learning,Developer Tools
+    containerImage: quay.io/rlourencc/openshift-fake-gpu-operator:v0.1.0
+    createdAt: "2026-06-23T15:58:18Z"
+    description: Simulate NVIDIA GPUs on CPU-only OpenShift nodes for testing and
+      development.
+    operators.operatorframework.io/builder: operator-sdk-v1.42.2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
+    repository: https://github.com/rflorenc/openshift-fake-gpu-operator
+    support: Community
+  name: openshift-fake-gpu-operator.v0.1.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - displayName: Fake GPUConfig
+      kind: FakeGPUConfig
+      name: fakegpuconfigs.gpu.openshift.io
+      version: v1alpha1
+  description: |
+    ## OpenShift Fake GPU Operator
+
+    Simulates NVIDIA GPU resources on CPU-only OpenShift nodes, enabling development
+    and testing of GPU-dependent workloads without physical hardware.
+
+    ### Features
+
+    - Simulates full GPUs and MIG partitions on any worker node
+    - Supports 7 GPU profiles: A100, H100, H200, B200, GB200, L40S, T4
+    - Registers `nvidia.com/gpu` and MIG slice resources with kubelet
+    - Exports Prometheus-compatible DCGM metrics
+    - Declarative CRD-driven configuration via `FakeGPUConfig`
+    - Automatic node labeling and topology management
+    - Detects and prevents conflicts with Helm-installed fake-gpu-operator
+
+    ### Use Cases
+
+    - Testing Kueue GPU quota and scheduling without GPUs
+    - Developing RHOAI workbenches and pipelines in non-GPU environments
+    - CI/CD pipeline validation for GPU workloads
+    - Training and workshop environments
+
+    ### Quick Start
+
+    1. Install the operator from OperatorHub
+    2. Create a `FakeGPUConfig` resource targeting your worker nodes
+    3. GPU resources appear on nodes automatically
+
+    ```yaml
+    apiVersion: gpu.openshift.io/v1alpha1
+    kind: FakeGPUConfig
+    metadata:
+      name: training-pool
+    spec:
+      gpuProfile: h200
+      gpuCount: 8
+      nodeSelector:
+        node-role.kubernetes.io/worker: ""
+    ```
+  displayName: OpenShift Fake GPU Operator
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAQElEQVR4nO3OQQ0AIAwAsanGG+7mguPRpAI6585X+oGQkJBQPRASEhKqB0JCQkL1QEhISKgeCAkJCdUDISGhxxbl9qeX0m/NCwAAAABJRU5ErkJggg==
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          - serviceaccounts
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - list
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          - deployments
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - gpu.openshift.io
+          resources:
+          - fakegpuconfigs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - gpu.openshift.io
+          resources:
+          - fakegpuconfigs/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - gpu.openshift.io
+          resources:
+          - fakegpuconfigs/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - node.k8s.io
+          resources:
+          - runtimeclasses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: openshift-fake-gpu-operator-controller-manager
+      deployments:
+      - label:
+          app.kubernetes.io/managed-by: kustomize
+          app.kubernetes.io/name: openshift-fake-gpu-operator
+          control-plane: controller-manager
+        name: openshift-fake-gpu-operator-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: openshift-fake-gpu-operator
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: manager
+              labels:
+                app.kubernetes.io/name: openshift-fake-gpu-operator
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --metrics-bind-address=:8443
+                - --leader-elect
+                - --health-probe-bind-address=:8081
+                command:
+                - /manager
+                image: quay.io/rlourencc/openshift-fake-gpu-operator:v0.1.1
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              securityContext:
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+              serviceAccountName: openshift-fake-gpu-operator-controller-manager
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: openshift-fake-gpu-operator-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: AllNamespaces
+  - supported: false
+    type: MultiNamespace
+  keywords:
+  - gpu
+  - nvidia
+  - simulation
+  - fake-gpu
+  - kueue
+  - ai
+  - machine-learning
+  - testing
+  links:
+  - name: Source Code
+    url: https://github.com/rflorenc/openshift-fake-gpu-operator
+  - name: Fake GPU Operator (upstream)
+    url: https://github.com/run-ai/fake-gpu-operator
+  maintainers:
+  - email: rlourenco@redhat.com
+    name: Ricardo Lourenco
+  maturity: alpha
+  minKubeVersion: 1.28.0
+  provider:
+    name: Community
+  version: 0.1.1

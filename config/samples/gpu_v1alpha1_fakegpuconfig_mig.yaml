@@ -1,0 +1,19 @@
+apiVersion: gpu.openshift.io/v1alpha1
+kind: FakeGPUConfig
+metadata:
+  name: mig-pool
+spec:
+  gpuProfile: h200
+  gpuCount: 8
+  nodeSelector:
+    node-role.kubernetes.io/worker: ""
+  mig:
+    enabled: true
+    strategy: mixed
+    devices:
+      - name: 1g.18gb
+        count: 16
+      - name: 2g.35gb
+        count: 8
+      - name: 3g.71gb
+        count: 8
