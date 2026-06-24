@@ -4,8 +4,12 @@ An OpenShift operator that wraps [run-ai/fake-gpu-operator](https://github.com/r
 The reference "upstream" project from NVIDIA RunAI uses Helm and requires manual node labeling and SCC grants on OpenShift.  
 This project replaces that with a `FakeGPUConfig` custom resource that handles node labeling, component lifecycle, RBAC, and SCC management.
 
+In short:  
+  * run-ai/fake-gpu-operator:  A Helm chart that deploys 14 standalone binaries as pods  
+  * this project:    An Operator that reconciles CRD and deploys their container images as pods
 
-It simulates NVIDIA GPU resources on CPU only OpenShift nodes, enabling development and testing of GPU dependent workloads without physical hardware.
+Here we handle what Helm can't such as automatic node labeling, SCC grants, lifecycle cleanup, and OLM integration.
+
 
 ## Features
 
