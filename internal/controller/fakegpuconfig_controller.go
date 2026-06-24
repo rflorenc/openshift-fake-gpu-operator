@@ -64,6 +64,7 @@ type FakeGPUConfigReconciler struct {
 // +kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=list
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
@@ -293,7 +294,7 @@ func (r *FakeGPUConfigReconciler) reconcileTopologyConfigMap(ctx context.Context
 }
 
 func (r *FakeGPUConfigReconciler) reconcileGPUProfileConfigMap(ctx context.Context, cfg *gpuv1alpha1.FakeGPUConfig, profile profiles.GPUProfile) error {
-	cm := resources.GPUProfileConfigMap(profile, r.Namespace)
+	cm := resources.GPUProfileConfigMap(cfg, profile, r.Namespace)
 	return r.createOrUpdate(ctx, cm, cfg)
 }
 
@@ -468,6 +469,63 @@ func (r *FakeGPUConfigReconciler) updateStatus(ctx context.Context, cfg *gpuv1al
 func (r *FakeGPUConfigReconciler) handleDeletion(ctx context.Context, cfg *gpuv1alpha1.FakeGPUConfig) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 
+	instanceLabels := client.MatchingLabels{"app.kubernetes.io/instance": cfg.Name}
+	ns := client.InNamespace(r.Namespace)
+
+	dsList := &appsv1.DaemonSetList{}
+	if err := r.List(ctx, dsList, instanceLabels, ns); err == nil {
+		for i := range dsList.Items {
+			if err := r.Delete(ctx, &dsList.Items[i]); err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete DaemonSet", "name", dsList.Items[i].Name)
+			}
+		}
+	}
+
+	deployList := &appsv1.DeploymentList{}
+	if err := r.List(ctx, deployList, instanceLabels, ns); err == nil {
+		for i := range deployList.Items {
+			if err := r.Delete(ctx, &deployList.Items[i]); err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete Deployment", "name", deployList.Items[i].Name)
+			}
+		}
+	}
+
+	svcList := &corev1.ServiceList{}
+	if err := r.List(ctx, svcList, instanceLabels, ns); err == nil {
+		for i := range svcList.Items {
+			if err := r.Delete(ctx, &svcList.Items[i]); err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete Service", "name", svcList.Items[i].Name)
+			}
+		}
+	}
+
+	saList := &corev1.ServiceAccountList{}
+	if err := r.List(ctx, saList, instanceLabels, ns); err == nil {
+		for i := range saList.Items {
+			if err := r.Delete(ctx, &saList.Items[i]); err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete ServiceAccount", "name", saList.Items[i].Name)
+			}
+		}
+	}
+
+	cmList := &corev1.ConfigMapList{}
+	if err := r.List(ctx, cmList, instanceLabels, ns); err == nil {
+		for i := range cmList.Items {
+			if err := r.Delete(ctx, &cmList.Items[i]); err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete ConfigMap", "name", cmList.Items[i].Name)
+			}
+		}
+	}
+
+	nodeTopoCMs := &corev1.ConfigMapList{}
+	if err := r.List(ctx, nodeTopoCMs, client.MatchingLabels{"node-topology": "true"}, ns); err == nil {
+		for i := range nodeTopoCMs.Items {
+			if err := r.Delete(ctx, &nodeTopoCMs.Items[i]); err != nil && !errors.IsNotFound(err) {
+				log.Error(err, "Failed to delete node topology ConfigMap", "name", nodeTopoCMs.Items[i].Name)
+			}
+		}
+	}
+
 	nodeList := &corev1.NodeList{}
 	if err := r.List(ctx, nodeList, client.MatchingLabels{nodePoolLabel: cfg.Name}); err != nil {
 		return ctrl.Result{}, err
@@ -478,6 +536,9 @@ func (r *FakeGPUConfigReconciler) handleDeletion(ctx context.Context, cfg *gpuv1
 		delete(node.Labels, nodePoolLabel)
 		delete(node.Labels, deployDPLabel)
 		delete(node.Labels, deployDCGMLabel)
+		delete(node.Labels, "node-role.kubernetes.io/runai-dynamic-mig")
+		delete(node.Labels, "nvidia.com/gpu.deploy.dra-plugin-gpu")
+		delete(node.Labels, "nvidia.com/gpu.deploy.compute-domain-dra-plugin")
 		if err := r.Update(ctx, node); err != nil {
 			log.Error(err, "Failed to remove labels from node", "node", node.Name)
 		}

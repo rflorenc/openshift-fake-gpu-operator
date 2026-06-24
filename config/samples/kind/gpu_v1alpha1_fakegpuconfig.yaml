@@ -1,0 +1,9 @@
+apiVersion: gpu.openshift.io/v1alpha1
+kind: FakeGPUConfig
+metadata:
+  name: training-pool
+spec:
+  gpuProfile: h200
+  gpuCount: 8
+  nodeSelector:
+    kubernetes.io/os: linux

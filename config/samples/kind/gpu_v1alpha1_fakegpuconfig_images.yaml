@@ -1,0 +1,20 @@
+apiVersion: gpu.openshift.io/v1alpha1
+kind: FakeGPUConfig
+metadata:
+  name: images-pool
+spec:
+  gpuProfile: h200
+  gpuCount: 8
+  nodeSelector:
+    kubernetes.io/os: linux
+  images:
+    # Override all component images to a specific upstream version
+    tag: "0.2.0"
+    # Or point to a private mirror
+    # registry: my-registry.example.com/fake-gpu
+    #
+    # Pin individual components to a full image reference.
+    # Overrides take precedence over registry and tag.
+    # overrides:
+    #   device-plugin: my-registry.example.com/custom-device-plugin:test
+    #   status-updater: ghcr.io/run-ai/fake-gpu-operator/status-updater:0.1.0

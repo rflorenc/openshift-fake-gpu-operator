@@ -1,0 +1,12 @@
+apiVersion: gpu.openshift.io/v1alpha1
+kind: FakeGPUConfig
+metadata:
+  name: default
+spec:
+  gpuProfile: h100
+  gpuCount: 4
+  # No nodeSelector — operator watches for nodes labeled with
+  # run.ai/simulated-gpu-node-pool=default (matching this CR's name).
+  #
+  # Label nodes manually:
+  #   oc label node <node-name> run.ai/simulated-gpu-node-pool=default

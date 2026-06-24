@@ -37,6 +37,7 @@ nodePools:
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "topology",
 			Namespace: namespace,
+			Labels:    commonLabels(cfg, "topology"),
 		},
 		Data: map[string]string{
 			"topology.yml": topology,
@@ -44,7 +45,7 @@ nodePools:
 	}
 }
 
-func GPUProfileConfigMap(profile profiles.GPUProfile, namespace string) *corev1.ConfigMap {
+func GPUProfileConfigMap(cfg *gpuv1alpha1.FakeGPUConfig, profile profiles.GPUProfile, namespace string) *corev1.ConfigMap {
 	profileYAML := fmt.Sprintf(`device_count: 8
 device_defaults:
   name: %q
@@ -57,14 +58,18 @@ device_defaults:
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "gpu-profile-" + profile.Name,
 			Namespace: namespace,
-			Labels: map[string]string{
-				"fake-gpu-operator/gpu-profile": "true",
-			},
+			Labels:    gpuProfileLabels(cfg),
 		},
 		Data: map[string]string{
 			"profile.yaml": profileYAML,
 		},
 	}
+}
+
+func gpuProfileLabels(cfg *gpuv1alpha1.FakeGPUConfig) map[string]string {
+	l := commonLabels(cfg, "gpu-profile")
+	l["fake-gpu-operator/gpu-profile"] = "true"
+	return l
 }
 
 func NodeTopologyConfigMap(nodeName string, cfg *gpuv1alpha1.FakeGPUConfig, profile profiles.GPUProfile, namespace string) *corev1.ConfigMap {

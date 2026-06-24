@@ -1,0 +1,16 @@
+apiVersion: gpu.openshift.io/v1alpha1
+kind: FakeGPUConfig
+metadata:
+  name: custom-pool
+spec:
+  custom:
+    gpuProduct: "NVIDIA-Custom-GPU"
+    gpuMemory: 81920
+  gpuCount: 4
+  nodeSelector:
+    kubernetes.io/os: linux
+  components:
+    devicePlugin: true
+    statusUpdater: true
+    metricsExporter: false
+    topologyServer: false

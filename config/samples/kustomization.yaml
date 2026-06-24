@@ -1,8 +1,8 @@
 resources:
-- gpu_v1alpha1_fakegpuconfig.yaml
-- gpu_v1alpha1_fakegpuconfig_mig.yaml
-- gpu_v1alpha1_fakegpuconfig_custom.yaml
-- gpu_v1alpha1_fakegpuconfig_dra.yaml
-- gpu_v1alpha1_fakegpuconfig_manual_label.yaml
-- gpu_v1alpha1_fakegpuconfig_images.yaml
+- openshift/gpu_v1alpha1_fakegpuconfig.yaml
+- openshift/gpu_v1alpha1_fakegpuconfig_mig.yaml
+- openshift/gpu_v1alpha1_fakegpuconfig_custom.yaml
+- openshift/gpu_v1alpha1_fakegpuconfig_dra.yaml
+- openshift/gpu_v1alpha1_fakegpuconfig_manual_label.yaml
+- openshift/gpu_v1alpha1_fakegpuconfig_images.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

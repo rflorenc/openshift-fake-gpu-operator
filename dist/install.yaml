@@ -360,6 +360,7 @@ rules:
   resources:
   - configmaps
   - serviceaccounts
+  - services
   verbs:
   - create
   - delete
@@ -588,7 +589,7 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
-        image: quay.io/rlourencc/openshift-fake-gpu-operator:v0.2.0
+        image: quay.io/rlourencc/openshift-fake-gpu-operator:v0.3.1
         livenessProbe:
           httpGet:
             path: /healthz
