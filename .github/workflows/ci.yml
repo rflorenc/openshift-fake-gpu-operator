@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: CGO_ENABLED=0 go build -o /dev/null cmd/main.go
+
+      - name: Verify manifests are up to date
+        run: |
+          make generate manifests
+          git diff --exit-code -- api/ config/
