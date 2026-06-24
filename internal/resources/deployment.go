@@ -8,12 +8,6 @@ import (
 	gpuv1alpha1 "github.com/rflorenc/openshift-fake-gpu-operator/api/v1alpha1"
 )
 
-const (
-	StatusUpdaterImage           = "ghcr.io/run-ai/fake-gpu-operator/status-updater:0.1.0"
-	TopologyServerImage          = "ghcr.io/run-ai/fake-gpu-operator/topology-server:0.1.0"
-	ComputeDomainControllerImage = "ghcr.io/run-ai/fake-gpu-operator/compute-domain-controller:0.1.0"
-)
-
 func StatusUpdaterDeployment(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) *appsv1.Deployment {
 	replicas := int32(1)
 	return &appsv1.Deployment{
@@ -36,7 +30,7 @@ func StatusUpdaterDeployment(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) *
 					Containers: []corev1.Container{
 						{
 							Name:  "status-updater",
-							Image: StatusUpdaterImage,
+							Image: imageFor(cfg, "status-updater"),
 							Env: []corev1.EnvVar{
 								{Name: "TOPOLOGY_CM_NAMESPACE", Value: namespace},
 								{Name: "TOPOLOGY_CM_NAME", Value: "topology"},
@@ -83,7 +77,7 @@ func ComputeDomainControllerDeployment(cfg *gpuv1alpha1.FakeGPUConfig, namespace
 					Containers: []corev1.Container{
 						{
 							Name:  "compute-domain-controller",
-							Image: ComputeDomainControllerImage,
+							Image: imageFor(cfg, "compute-domain-controller"),
 							Env: []corev1.EnvVar{
 								{Name: "METRICS_BIND_ADDRESS", Value: ":8080"},
 								{Name: "HEALTH_PROBE_BIND_ADDRESS", Value: ":8081"},
@@ -119,7 +113,7 @@ func TopologyServerDeployment(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) 
 					Containers: []corev1.Container{
 						{
 							Name:  "topology-server",
-							Image: TopologyServerImage,
+							Image: imageFor(cfg, "topology-server"),
 							Ports: []corev1.ContainerPort{
 								{Name: "http", ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
 							},

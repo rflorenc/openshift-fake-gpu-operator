@@ -367,6 +367,6 @@ catalog-push: ## Push a catalog image.
 release: ## Build and push operator image, generate bundle with OCP annotations, build and push bundle image.
 	$(MAKE) docker-build docker-push
 	$(MAKE) bundle
-	@sed -i'' -e '/project_layout/a\  operators.operatorframework.io.bundle.channel.default.v1: alpha\n  com.redhat.openshift.versions: "$(OPENSHIFT_VERSIONS)"' bundle/metadata/annotations.yaml
-	@sed -i'' -e '/project_layout/a\LABEL com.redhat.openshift.versions="$(OPENSHIFT_VERSIONS)"' bundle.Dockerfile
+	@$(SED) -i '/project_layout/a\  operators.operatorframework.io.bundle.channel.default.v1: alpha\n  com.redhat.openshift.versions: "$(OPENSHIFT_VERSIONS)"' bundle/metadata/annotations.yaml
+	@$(SED) -i '/project_layout/a\LABEL com.redhat.openshift.versions="$(OPENSHIFT_VERSIONS)"' bundle.Dockerfile
 	$(MAKE) bundle-build bundle-push

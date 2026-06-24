@@ -102,6 +102,17 @@ spec:
                 - l40s
                 - t4
                 type: string
+              images:
+                properties:
+                  overrides:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  registry:
+                    type: string
+                  tag:
+                    type: string
+                type: object
               mig:
                 properties:
                   devices:

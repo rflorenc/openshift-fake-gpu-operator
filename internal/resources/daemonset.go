@@ -8,13 +8,16 @@ import (
 	gpuv1alpha1 "github.com/rflorenc/openshift-fake-gpu-operator/api/v1alpha1"
 )
 
-const (
-	DevicePluginImage     = "ghcr.io/run-ai/fake-gpu-operator/device-plugin:0.1.0"
-	MetricsExporterImage  = "ghcr.io/run-ai/fake-gpu-operator/status-exporter:0.1.0"
-	MIGFakerImage         = "ghcr.io/run-ai/fake-gpu-operator/mig-faker:0.1.0"
-	DRAPluginImage        = "ghcr.io/run-ai/fake-gpu-operator/dra-plugin-gpu:0.1.0"
-	ComputeDomainDRAImage = "ghcr.io/run-ai/fake-gpu-operator/compute-domain-dra-plugin:0.1.0"
-)
+func imageFor(cfg *gpuv1alpha1.FakeGPUConfig, component string) string {
+	var registry, tag string
+	var overrides map[string]string
+	if cfg.Spec.Images != nil {
+		registry = cfg.Spec.Images.Registry
+		tag = cfg.Spec.Images.Tag
+		overrides = cfg.Spec.Images.Overrides
+	}
+	return Image(component, registry, tag, overrides)
+}
 
 func DevicePluginDaemonSet(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) *appsv1.DaemonSet {
 	privileged := true
@@ -43,7 +46,7 @@ func DevicePluginDaemonSet(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) *ap
 					Containers: []corev1.Container{
 						{
 							Name:  "nvidia-device-plugin-ctr",
-							Image: DevicePluginImage,
+							Image: imageFor(cfg, "device-plugin"),
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
@@ -124,7 +127,7 @@ func MetricsExporterDaemonSet(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) 
 					Containers: []corev1.Container{
 						{
 							Name:  "nvidia-dcgm-exporter",
-							Image: MetricsExporterImage,
+							Image: imageFor(cfg, "metrics-exporter"),
 							Ports: []corev1.ContainerPort{
 								{Name: "metrics", ContainerPort: 9400, Protocol: corev1.ProtocolTCP},
 							},
@@ -172,7 +175,7 @@ func MIGFakerDaemonSet(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) *appsv1
 					Containers: []corev1.Container{
 						{
 							Name:  "mig-faker",
-							Image: MIGFakerImage,
+							Image: imageFor(cfg, "mig-faker"),
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
@@ -220,7 +223,7 @@ func DRAPluginDaemonSet(cfg *gpuv1alpha1.FakeGPUConfig, namespace string) *appsv
 					Containers: []corev1.Container{
 						{
 							Name:    "dra-plugin",
-							Image:   DRAPluginImage,
+							Image:   imageFor(cfg, "dra-plugin"),
 							Command: []string{"dra-plugin-gpu"},
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
@@ -306,7 +309,7 @@ func ComputeDomainDRADaemonSet(cfg *gpuv1alpha1.FakeGPUConfig, namespace string)
 					Containers: []corev1.Container{
 						{
 							Name:  "compute-domain-dra",
-							Image: ComputeDomainDRAImage,
+							Image: imageFor(cfg, "compute-domain-dra"),
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},

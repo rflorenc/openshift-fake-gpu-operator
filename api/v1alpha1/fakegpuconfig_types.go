@@ -41,6 +41,20 @@ type FakeGPUConfigSpec struct {
 
 	// +optional
 	Components *ComponentsSpec `json:"components,omitempty"`
+
+	// +optional
+	Images *ImagesSpec `json:"images,omitempty"`
+}
+
+type ImagesSpec struct {
+	// +optional
+	Registry string `json:"registry,omitempty"`
+
+	// +optional
+	Tag string `json:"tag,omitempty"`
+
+	// +optional
+	Overrides map[string]string `json:"overrides,omitempty"`
 }
 
 type CustomGPUSpec struct {

@@ -55,8 +55,14 @@ spec:
             properties:
               components:
                 properties:
+                  computeDomainController:
+                    default: false
+                    type: boolean
                   devicePlugin:
                     default: true
+                    type: boolean
+                  dra:
+                    default: false
                     type: boolean
                   metricsExporter:
                     default: true
@@ -126,10 +132,7 @@ spec:
               nodeSelector:
                 additionalProperties:
                   type: string
-                minProperties: 1
                 type: object
-            required:
-            - nodeSelector
             type: object
           status:
             properties:

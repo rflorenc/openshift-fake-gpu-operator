@@ -8,6 +8,112 @@ metadata:
           "apiVersion": "gpu.openshift.io/v1alpha1",
           "kind": "FakeGPUConfig",
           "metadata": {
+            "name": "custom-pool"
+          },
+          "spec": {
+            "components": {
+              "devicePlugin": true,
+              "metricsExporter": false,
+              "statusUpdater": true,
+              "topologyServer": false
+            },
+            "custom": {
+              "gpuMemory": 81920,
+              "gpuProduct": "NVIDIA-Custom-GPU"
+            },
+            "gpuCount": 4,
+            "nodeSelector": {
+              "node-role.kubernetes.io/worker": ""
+            }
+          }
+        },
+        {
+          "apiVersion": "gpu.openshift.io/v1alpha1",
+          "kind": "FakeGPUConfig",
+          "metadata": {
+            "name": "default"
+          },
+          "spec": {
+            "gpuCount": 4,
+            "gpuProfile": "h100"
+          }
+        },
+        {
+          "apiVersion": "gpu.openshift.io/v1alpha1",
+          "kind": "FakeGPUConfig",
+          "metadata": {
+            "name": "dra-pool"
+          },
+          "spec": {
+            "components": {
+              "computeDomainController": true,
+              "devicePlugin": true,
+              "dra": true,
+              "metricsExporter": true,
+              "statusUpdater": true,
+              "topologyServer": true
+            },
+            "gpuCount": 8,
+            "gpuProfile": "a100",
+            "mig": {
+              "devices": [
+                {
+                  "count": 7,
+                  "name": "1g.5gb"
+                },
+                {
+                  "count": 3,
+                  "name": "2g.10gb"
+                },
+                {
+                  "count": 2,
+                  "name": "3g.20gb"
+                }
+              ],
+              "enabled": true,
+              "strategy": "mixed"
+            },
+            "nodeSelector": {
+              "node-role.kubernetes.io/worker": ""
+            }
+          }
+        },
+        {
+          "apiVersion": "gpu.openshift.io/v1alpha1",
+          "kind": "FakeGPUConfig",
+          "metadata": {
+            "name": "mig-pool"
+          },
+          "spec": {
+            "gpuCount": 8,
+            "gpuProfile": "h200",
+            "mig": {
+              "devices": [
+                {
+                  "count": 16,
+                  "name": "1g.18gb"
+                },
+                {
+                  "count": 8,
+                  "name": "2g.35gb"
+                },
+                {
+                  "count": 8,
+                  "name": "3g.71gb"
+                }
+              ],
+              "enabled": true,
+              "strategy": "mixed"
+            },
+            "nodeSelector": {
+              "node-role.kubernetes.io/worker": ""
+            }
+          }
+        },
+        {
+          "apiVersion": "gpu.openshift.io/v1alpha1",
+          "kind": "FakeGPUConfig",
+          "metadata": {
             "name": "training-pool"
           },
           "spec": {
@@ -22,14 +128,14 @@ metadata:
     capabilities: Basic Install
     categories: AI/Machine Learning,Developer Tools
     containerImage: quay.io/rlourencc/openshift-fake-gpu-operator:v0.1.0
-    createdAt: "2026-06-23T15:58:18Z"
+    createdAt: "2026-06-24T07:07:49Z"
     description: Simulate NVIDIA GPUs on CPU-only OpenShift nodes for testing and
       development.
     operators.operatorframework.io/builder: operator-sdk-v1.42.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
     repository: https://github.com/rflorenc/openshift-fake-gpu-operator
     support: Community
-  name: openshift-fake-gpu-operator.v0.1.1
+  name: openshift-fake-gpu-operator.v0.2.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -189,6 +295,14 @@ spec:
           - update
           - watch
         - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - privileged
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        - apiGroups:
           - authentication.k8s.io
           resources:
           - tokenreviews
@@ -229,7 +343,7 @@ spec:
                 - --health-probe-bind-address=:8081
                 command:
                 - /manager
-                image: quay.io/rlourencc/openshift-fake-gpu-operator:v0.1.1
+                image: quay.io/rlourencc/openshift-fake-gpu-operator:v0.2.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -326,4 +440,4 @@ spec:
   minKubeVersion: 1.28.0
   provider:
     name: Community
-  version: 0.1.1
+  version: 0.2.0

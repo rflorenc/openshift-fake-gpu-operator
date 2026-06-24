@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,8 +51,9 @@ const (
 
 type FakeGPUConfigReconciler struct {
 	client.Client
-	Scheme    *runtime.Scheme
-	Namespace string
+	Scheme      *runtime.Scheme
+	Namespace   string
+	isOpenShift *bool
 }
 
 // +kubebuilder:rbac:groups=gpu.openshift.io,resources=fakegpuconfigs,verbs=get;list;watch;create;update;patch;delete
@@ -271,13 +273,15 @@ func (r *FakeGPUConfigReconciler) reconcileRBAC(ctx context.Context, cfg *gpuv1a
 		return err
 	}
 
-	sccRole := resources.SCCClusterRole(cfg)
-	if err := r.createOrUpdateClusterScoped(ctx, sccRole); err != nil {
-		return err
-	}
-	sccBinding := resources.SCCClusterRoleBinding(cfg, r.Namespace)
-	if err := r.createOrUpdateClusterScoped(ctx, sccBinding); err != nil {
-		return err
+	if r.detectOpenShift() {
+		sccRole := resources.SCCClusterRole(cfg)
+		if err := r.createOrUpdateClusterScoped(ctx, sccRole); err != nil {
+			return err
+		}
+		sccBinding := resources.SCCClusterRoleBinding(cfg, r.Namespace)
+		if err := r.createOrUpdateClusterScoped(ctx, sccBinding); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -345,6 +349,18 @@ func (r *FakeGPUConfigReconciler) reconcileComputeDomainDRA(ctx context.Context,
 func (r *FakeGPUConfigReconciler) reconcileRuntimeClass(ctx context.Context, cfg *gpuv1alpha1.FakeGPUConfig) error {
 	rc := resources.NvidiaRuntimeClass(cfg)
 	return r.createOrUpdateClusterScoped(ctx, rc)
+}
+
+func (r *FakeGPUConfigReconciler) detectOpenShift() bool {
+	if r.isOpenShift != nil {
+		return *r.isOpenShift
+	}
+	_, err := r.Client.RESTMapper().ResourcesFor(
+		schema.GroupVersionResource{Group: "security.openshift.io", Version: "v1", Resource: "securitycontextconstraints"},
+	)
+	result := err == nil
+	r.isOpenShift = &result
+	return result
 }
 
 func (r *FakeGPUConfigReconciler) nodeListOption(cfg *gpuv1alpha1.FakeGPUConfig) client.MatchingLabels {
@@ -474,9 +490,13 @@ func (r *FakeGPUConfigReconciler) handleDeletion(ctx context.Context, cfg *gpuv1
 		&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: "fake-gpu-status-updater-" + cfg.Name}},
 		&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: "fake-gpu-metrics-exporter-" + cfg.Name}},
 		&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: "fake-gpu-metrics-exporter-" + cfg.Name}},
-		&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: "fake-gpu-scc-" + cfg.Name}},
-		&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: "fake-gpu-scc-" + cfg.Name}},
 		&nodev1.RuntimeClass{ObjectMeta: metav1.ObjectMeta{Name: "nvidia"}},
+	}
+	if r.detectOpenShift() {
+		clusterScopedResources = append(clusterScopedResources,
+			&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: "fake-gpu-scc-" + cfg.Name}},
+			&rbacv1.ClusterRoleBinding{ObjectMeta: metav1.ObjectMeta{Name: "fake-gpu-scc-" + cfg.Name}},
+		)
 	}
 	for _, obj := range clusterScopedResources {
 		if err := r.Delete(ctx, obj); err != nil && !errors.IsNotFound(err) {
